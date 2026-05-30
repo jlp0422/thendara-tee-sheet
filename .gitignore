@@ -1,0 +1,12 @@
+# HAR files contain auth tokens and personal data
+*.har
+
+# Design/planning docs
+*.md
+
+# macOS
+.DS_Store
+
+# Secrets / env
+.env
+.env.*

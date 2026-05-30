@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { client } from './client';
 import type { BookingResult, Reservation, UpcomingReservationsResponse } from './types';
 

@@ -36,9 +36,9 @@ export default function BookScreen() {
   const [selectedHoles, setSelectedHoles] = useState<number>(
     holesOptions[holesOptions.length - 1] ?? 18,
   );
-  const [selectedPlayers, setSelectedPlayers] = useState<number>(
-    slot.availableParticipantNo[0] ?? 1,
-  );
+  // availableParticipantNo contains position indices (e.g. [3,4]) — its length is how many spots are open
+  const availableSpots = slot.availableParticipantNo.length;
+  const [selectedPlayers, setSelectedPlayers] = useState<number>(1);
   const [selectedPartners, setSelectedPartners] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -146,7 +146,7 @@ export default function BookScreen() {
             Number of Players
           </Text>
           <View className="flex-row flex-wrap gap-3">
-            {slot.availableParticipantNo.map((n) => (
+            {Array.from({ length: availableSpots }, (_, i) => i + 1).map((n) => (
               <Pressable
                 key={n}
                 onPress={() => {
