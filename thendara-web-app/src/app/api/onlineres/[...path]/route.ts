@@ -58,15 +58,29 @@ async function proxy(req: NextRequest, path: string[], method: 'get' | 'post') {
 
   const body = method === 'post' ? await req.text() : undefined;
 
+  // Cloudflare challenges datacenter IPs (e.g. Railway) even with a correct TLS
+  // fingerprint. Routing cycletls through a residential proxy presents a residential
+  // exit IP, which Cloudflare lets through. Set PROXY_URL to enable; locally (residential
+  // IP) it's unset and requests go direct.
+  const proxyUrl = process.env.PROXY_URL;
+
   const cycle = await getCycle();
   const res = await cycle(
     dest.toString(),
-    { ja3: CHROME_JA3, userAgent: CHROME_UA, headers, body },
+    { ja3: CHROME_JA3, userAgent: CHROME_UA, headers, body, ...(proxyUrl ? { proxy: proxyUrl } : {}) },
     method,
   );
 
-  // cycletls exposes the body as `data` (string or already-parsed JSON), not `body`.
-  const text = typeof res.data === 'string' ? res.data : JSON.stringify(res.data ?? '');
+  // cycletls exposes the body as `data`. Usually a string (or parsed JSON), but on some
+  // responses it comes back as a Buffer — decode that so we don't forward "{type:Buffer}".
+  let text: string;
+  if (typeof res.data === 'string') {
+    text = res.data;
+  } else if (res.data && typeof res.data === 'object' && (res.data as { type?: string }).type === 'Buffer') {
+    text = Buffer.from((res.data as { data: number[] }).data).toString('utf8');
+  } else {
+    text = JSON.stringify(res.data ?? '');
+  }
   if (res.status === 403) {
     console.error(`[proxy] 403 from ClubProphet: ${method} ${dest.toString()}\n${text.slice(0, 300)}`);
   }
